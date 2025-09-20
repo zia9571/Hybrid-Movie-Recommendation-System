@@ -5,7 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import xgboost as xgb
 import requests
 
-TMDB_API_KEY = "d2715da28b169ce7d0f24a87b7f11077"
+TMDB_API_KEY = st.secrets["TMDB_API_KEY"]
 
 def get_tmdb_genre_mapping():
     url = f"https://api.themoviedb.org/3/genre/movie/list?api_key={TMDB_API_KEY}&language=en-US"
