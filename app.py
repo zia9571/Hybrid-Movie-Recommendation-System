@@ -49,7 +49,7 @@ def hybrid_recommend_from_tmdb(query, top_n=10):
 
     return recs.sort_values("pred_rating", ascending=False)[["title", "genres", "pred_rating"]]
 
-st.title("🎬 Hybrid Movie Recommendation System (TMDB + MovieLens)")
+st.title("🎬 Hybrid Movie Recommendation System")
 
 user_query = st.text_input("Enter any movie title:", "The Materialist")
 
