@@ -32,13 +32,17 @@ def fetch_movie_from_tmdb(query):
 def hybrid_recommend_from_tmdb(query, top_n=10):
     movie_data = fetch_movie_from_tmdb(query)
     if not movie_data:
-        return pd.DataFrame({"title": [f"'{query}' not found in TMDB"], "genres": [""], "pred_rating": ["-"]})
+        return pd.DataFrame({"title": [f"'{query}' not found in TMDB"],
+                             "genres": [""],
+                             "pred_rating": ["-"],
+                             "poster": [""]})
 
     genre_ids = movie_data.get("genre_ids", [])
     genres = " ".join([tmdb_genres.get(g, "") for g in genre_ids])
     overview = movie_data.get("overview", "")
     query_text = movie_data["title"] + " " + genres + " " + overview
 
+    # TF-IDF similarity
     query_vec = tfidf.transform([query_text])
     sim_scores = cosine_similarity(query_vec, movie_tfidf).flatten()
     top_idx = sim_scores.argsort()[-top_n:][::-1]
@@ -47,7 +51,19 @@ def hybrid_recommend_from_tmdb(query, top_n=10):
     tfidf_input = tfidf.transform(recs["title"] + " " + recs["genres"])
     recs["pred_rating"] = xgb_model.predict(tfidf_input)
 
-    return recs.sort_values("pred_rating", ascending=False)[["title", "genres", "pred_rating"]]
+    # Fetch posters from TMDB for each recommended movie
+    poster_urls = []
+    for title in recs["title"]:
+        tmdb_result = fetch_movie_from_tmdb(title)
+        if tmdb_result and tmdb_result.get("poster_path"):
+            poster_urls.append(f"https://image.tmdb.org/t/p/w200{tmdb_result['poster_path']}")
+        else:
+            poster_urls.append("")  # empty if not found
+
+    recs["poster"] = poster_urls
+
+    return recs.sort_values("pred_rating", ascending=False)[["title", "genres", "pred_rating", "poster"]]
+
 
 st.title("🎬 Hybrid Movie Recommendation System (TMDB + MovieLens)")
 
@@ -55,5 +71,18 @@ user_query = st.text_input("Enter any movie title:", "The Materialist")
 
 if st.button("Recommend"):
     recs = hybrid_recommend_from_tmdb(user_query, top_n=10)
-    st.dataframe(recs)
+    
+    for idx, row in recs.iterrows():
+        cols = st.columns([1,3])  # small column for poster, big for info
+        with cols[0]:
+            if row["poster"]:
+                st.image(row["poster"])
+            else:
+                st.text("No poster")
+        with cols[1]:
+            st.markdown(f"**{row['title']}**")
+            st.markdown(f"Genres: {row['genres']}")
+            st.markdown(f"Predicted Rating: {row['pred_rating']:.2f}")
+        st.markdown("---")
+
 
