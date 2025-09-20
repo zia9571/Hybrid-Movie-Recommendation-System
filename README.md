@@ -1,4 +1,4 @@
-# 🎬 Hybrid Movie Recommendation System
+# Hybrid Movie Recommendation System
 
 A **hybrid movie recommendation system** that combines **content-based filtering (TF-IDF)** and **machine learning (XGBoost)** with **real-time TMDB API integration** to recommend movies based on any user query. This project is designed as a **portfolio-ready interactive app** with Streamlit and a visual Looker Studio dashboard.
 
