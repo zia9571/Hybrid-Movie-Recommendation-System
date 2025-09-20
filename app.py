@@ -25,19 +25,18 @@ def fetch_movie_from_tmdb(query):
     return None
 
 def hybrid_recommend_from_tmdb(query, top_n=10):
-    """Find recommendations based on TMDB query + MovieLens hybrid model."""
     movie_data = fetch_movie_from_tmdb(query)
     if not movie_data:
         return pd.DataFrame({"title": [f"'{query}' not found in TMDB"], "genres": [""], "pred_rating": ["-"]})
     
-    genres = " ".join([g["name"] for g in movie_data.get("genre_ids", [])]) if "genre_ids" in movie_data else ""
+    # Convert genre_ids to names
+    genre_ids = movie_data.get("genre_ids", [])
+    genres = " ".join([tmdb_genres.get(g, "") for g in genre_ids])
+    
     overview = movie_data.get("overview", "")
     query_text = movie_data["title"] + " " + genres + " " + overview
 
-    # TF-IDF transform
     query_vec = tfidf.transform([query_text])
-
-    # Similarity with MovieLens dataset
     sim_scores = cosine_similarity(query_vec, movie_tfidf).flatten()
     top_idx = sim_scores.argsort()[-top_n:][::-1]
 
@@ -46,6 +45,7 @@ def hybrid_recommend_from_tmdb(query, top_n=10):
     recs["pred_rating"] = xgb_model.predict(tfidf_input)
 
     return recs.sort_values("pred_rating", ascending=False)[["title", "genres", "pred_rating"]]
+
 
 st.title("🎬 Hybrid Movie Recommendation System (TMDB + MovieLens)")
 
