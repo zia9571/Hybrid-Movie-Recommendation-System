@@ -6,6 +6,12 @@ import xgboost as xgb
 import requests
 
 TMDB_API_KEY = "d2715da28b169ce7d0f24a87b7f11077" 
+def get_tmdb_genre_mapping():
+    url = f"https://api.themoviedb.org/3/genre/movie/list?api_key={TMDB_API_KEY}&language=en-US"
+    response = requests.get(url).json()
+    return {g["id"]: g["name"] for g in response["genres"]}
+
+tmdb_genres = get_tmdb_genre_mapping()  
 
 movies = pd.read_csv("movies.csv")
 
@@ -15,14 +21,6 @@ cosine_sim = cosine_similarity(movie_tfidf, movie_tfidf)
 
 xgb_model = xgb.XGBRegressor()
 xgb_model.load_model("xgb_movie_model.json")
-
-def fetch_movie_from_tmdb(query):
-    """Search TMDB for a movie and return details."""
-    url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={query}"
-    response = requests.get(url).json()
-    if response["results"]:
-        return response["results"][0]  # best match
-    return None
 
 def hybrid_recommend_from_tmdb(query, top_n=10):
     movie_data = fetch_movie_from_tmdb(query)
